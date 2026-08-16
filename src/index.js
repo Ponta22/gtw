@@ -1,10 +1,11 @@
 import { Hono } from 'hono';
 import * as chatgpt from './lib/api/chatgpt.js';
 import * as kraken from './lib/api/kraken.js';
+import * as mega from './lib/api/mega.js';
 
 const app = new Hono();
 
-const apiFiles = [chatgpt, kraken];
+const apiFiles = [chatgpt, kraken, mega];
 const endpointsList = [];
 
 apiFiles.forEach((module) => {
