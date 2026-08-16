@@ -1,9 +1,10 @@
 import { Hono } from 'hono';
 import * as chatgpt from './lib/api/chatgpt.js';
+import * as kraken from './lib/api/kraken.js';
 
 const app = new Hono();
 
-const apiFiles = [chatgpt];
+const apiFiles = [chatgpt, kraken];
 const endpointsList = [];
 
 apiFiles.forEach((module) => {
