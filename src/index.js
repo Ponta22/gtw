@@ -4,10 +4,11 @@ import * as kraken from './lib/api/kraken.js';
 import * as mega from './lib/api/mega.js';
 import * as ytmp3 from './lib/api/ytmp3.js';
 import * as ytmp4 from './lib/api/ytmp4.js';
+import * as screenshot from './lib/api/screenshot.js';
 
 const app = new Hono();
 
-const apiFiles = [chatgpt, kraken, mega, ytmp3, ytmp4];
+const apiFiles = [chatgpt, kraken, mega, ytmp3, ytmp4, screenshot];
 const endpointsList = [];
 
 apiFiles.forEach((module) => {
