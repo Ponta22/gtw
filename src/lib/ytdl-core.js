@@ -1,5 +1,5 @@
-import { createDecipheriv } from 'node:crypto';
 import { Buffer } from 'node:buffer';
+import { aesCbcDecrypt } from '../aes.js';
 
 export const AUDIO_QUALITIES = [92, 128, 256, 320];
 export const VIDEO_QUALITIES = [144, 360, 480, 720, 1080];
@@ -15,14 +15,13 @@ export function extractVideoId(url) {
 
 function decryptData(encryptedData) {
   const encryptedBuffer = Buffer.from(encryptedData, 'base64');
-  const iv = encryptedBuffer.subarray(0, 16);
-  const content = encryptedBuffer.subarray(16);
-  const key = Buffer.from(SECRET_KEY, 'hex');
+  const iv = new Uint8Array(encryptedBuffer.subarray(0, 16));
+  const content = new Uint8Array(encryptedBuffer.subarray(16));
+  const key = new Uint8Array(Buffer.from(SECRET_KEY, 'hex'));
 
-  const decipher = createDecipheriv('aes-128-cbc', key, iv);
-  const decrypted = Buffer.concat([decipher.update(content), decipher.final()]);
+  const decrypted = aesCbcDecrypt(key, iv, content, { removePadding: true });
 
-  return JSON.parse(decrypted.toString());
+  return JSON.parse(Buffer.from(decrypted).toString('utf8'));
 }
 
 export async function downloadFromSavetube(link, quality, downloadType) {
