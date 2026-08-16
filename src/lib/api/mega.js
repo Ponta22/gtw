@@ -9,7 +9,7 @@ export const config = {
   category: 'Downloader',
   desc: 'Ambil metadata & direct link file dari Mega.nz',
 
-  curlCmd: (origin) => `curl -X GET "${origin}/api/mega?url=https://mega.nz/file/xxxx#yyyy"`,
+  curlCmd: (origin) => `curl -X GET "${origin}/api/mega?url=${encodeURIComponent('https://mega.nz/file/xxxx#yyyy')}"`,
 
   testUi: `
     <div class="input-row">
