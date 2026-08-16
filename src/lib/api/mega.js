@@ -9,7 +9,9 @@ export const config = {
   category: 'Downloader',
   desc: 'Ambil metadata & direct link file dari Mega.nz',
 
-  curlCmd: (origin) => `curl -X GET "${origin}/api/mega?url=${encodeURIComponent('https://mega.nz/file/xxxx#yyyy')}"`,
+  curlCmd: (origin) => `curl -X POST "${origin}/api/mega" \\
+  -H "Content-Type: application/json" \\
+  -d '{"url":"https://mega.nz/file/xxxx#yyyy"}'`,
 
   testUi: `
     <div class="input-row">
@@ -21,26 +23,32 @@ export const config = {
         const card = btn.closest('.card');
         const input = card.querySelector('#mega-input').value;
         if (!input) return;
-        const url = '/api/mega?url=' + encodeURIComponent(input);
-        testApi(url, '__RESPONSE_ID__');
+        testApi('/api/mega', '__RESPONSE_ID__', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: input })
+        });
       }
     </script>
   `
 };
 
 export const handle = async (c) => {
-  let rawUrl = c.req.url.split('url=')[1] || c.req.query('url');
+  let url;
 
-  if (!rawUrl) {
+  try {
+    const body = await c.req.json();
+    url = body?.url;
+  } catch {
+    return c.json({ status: 'error', message: 'Body harus JSON valid, contoh: {"url":"..."}' }, 400);
+  }
+
+  if (!url) {
     return c.json({ status: 'error', message: 'Parameter "url" wajib diisi ya!' }, 400);
   }
 
   try {
-    rawUrl = decodeURIComponent(rawUrl);
-  } catch {}
-
-  try {
-    const { fileId, fileKey } = parseMegaUrl(rawUrl);
+    const { fileId, fileKey } = parseMegaUrl(url);
     const info = await getMegaInfo(fileId);
     const direct = await getMegaDirect(fileId);
 
@@ -108,7 +116,7 @@ function parseMegaUrl(url) {
   url = String(url).trim();
 
   const match =
-    url.match(/mega\.(?:nz|co\.nz)\/file\/([A-Za-z0-9_-]{8})(?:#|%23)([A-Za-z0-9_-]+)/) ||
+    url.match(/mega\.(?:nz|co\.nz)\/file\/([A-Za-z0-9_-]{8})#([A-Za-z0-9_-]+)/) ||
     url.match(/mega\.(?:nz|co\.nz)\/#!([A-Za-z0-9_-]{8})!([A-Za-z0-9_-]+)/);
 
   if (!match) throw new Error('Link Mega tidak valid!');
