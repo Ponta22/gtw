@@ -28,10 +28,29 @@ app.get('/', (c) => {
     return acc;
   }, {});
 
+  const catEntries = Object.entries(grouped);
   let globalIndex = 0;
 
-  const categoriesHtml = Object.entries(grouped).map(([cat, items], catIndex) => {
+  const folderGridHtml = catEntries.map(([cat, items], catIndex) => {
     const catColor = CAT_COLORS[catIndex % CAT_COLORS.length];
+    const catId = `cat-${catIndex}`;
+    const namesForSearch = items.map((i) => i.name.toLowerCase()).join(' ');
+
+    return `
+      <button class="folder-card" data-catsearch="${cat.toLowerCase()} ${namesForSearch}" onclick="openCategory('${catId}')">
+        <span class="icon-box" style="background:${catColor};">📂</span>
+        <div class="folder-info">
+          <h3>${cat}</h3>
+          <span>${items.length} endpoint</span>
+        </div>
+        <span class="folder-arrow">→</span>
+      </button>
+    `;
+  }).join('');
+
+  const categoryViewsHtml = catEntries.map(([cat, items], catIndex) => {
+    const catColor = CAT_COLORS[catIndex % CAT_COLORS.length];
+    const catId = `cat-${catIndex}`;
 
     const cardsHtml = items.map((item) => {
       const respId = `resp-${globalIndex}`;
@@ -79,18 +98,18 @@ app.get('/', (c) => {
     }).join('');
 
     return `
-      <section class="category" style="animation-delay:${catIndex * 90}ms;">
-        <button class="cat-header sound-toggle" onclick="toggleCategory(this)">
-          <div class="cat-header-left">
-            <span class="icon-box" style="background:${catColor};">📂</span>
-            <span>${cat}</span>
-          </div>
-          <span class="cat-meta">${items.length} endpoint <i class="chevron">▼</i></span>
-        </button>
-        <div class="cat-body open">
-          <div class="cat-body-inner">${cardsHtml}</div>
+      <div class="view category-view" id="${catId}">
+        <button class="back-btn sound-click" onclick="showHome()">← Kembali</button>
+        <div class="view-header">
+          <span class="icon-box" style="background:${catColor};">📂</span>
+          <h2>${cat}</h2>
         </div>
-      </section>
+        <div class="search-wrap">
+          <input type="text" placeholder="🔍 Cari di ${cat}..." oninput="filterCards(this.value, '${catId}')">
+        </div>
+        <div class="cards-wrap">${cardsHtml}</div>
+        <div class="empty-state" style="display:none;">Gak ketemu endpoint yang cocok 🕵️</div>
+      </div>
     `;
   }).join('');
 
@@ -119,16 +138,25 @@ app.get('/', (c) => {
           color: #000;
           padding: 16px;
           font-size: 14px;
+          overflow-x: hidden;
         }
         .container { max-width: 640px; margin: 0 auto; }
         code, .mono { font-family: 'Courier New', Courier, monospace; }
 
-        button, input { -webkit-tap-highlight-color: transparent; user-select: none; }
+        button, input { -webkit-tap-highlight-color: transparent; user-select: none; font-family: inherit; }
         input { user-select: text; }
 
         @keyframes popIn {
           from { opacity: 0; transform: translateY(14px) scale(0.97); }
           to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes slideInRight {
+          from { opacity: 0; transform: translateX(28px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes slideInLeft {
+          from { opacity: 0; transform: translateX(-28px); }
+          to { opacity: 1; transform: translateX(0); }
         }
         @keyframes wiggle {
           0%, 100% { transform: rotate(-4deg); }
@@ -158,7 +186,12 @@ app.get('/', (c) => {
         h1 .rocket { display: inline-block; animation: wiggle 1.8s ease-in-out infinite; transform-origin: 70% 70%; }
         .hero p { font-size: 0.85rem; font-weight: 600; opacity: 0.85; }
 
-        .search-wrap { margin-bottom: 16px; animation: popIn 0.4s var(--ease) both; animation-delay: 0.05s; }
+        .view { display: none; }
+        .view.active { display: block; }
+        #homeView.active { animation: popIn 0.35s var(--ease) both; }
+        .category-view.active { animation: slideInRight 0.35s var(--ease) both; }
+
+        .search-wrap { margin-bottom: 16px; }
         .search-wrap input {
           width: 100%;
           border-radius: 14px;
@@ -176,36 +209,50 @@ app.get('/', (c) => {
           transform: translate(-2px, -2px);
         }
 
-        .category { margin-bottom: 14px; animation: popIn 0.4s var(--ease) both; }
-        .cat-header {
-          width: 100%;
+        .folder-grid { display: flex; flex-direction: column; gap: 12px; }
+        .folder-card {
           display: flex;
           align-items: center;
-          justify-content: space-between;
+          gap: 14px;
+          width: 100%;
           background: #fff;
           border: var(--border-width) solid var(--border-color);
           border-radius: var(--radius);
-          padding: 10px 14px;
-          font-family: inherit;
-          font-weight: 800;
-          font-size: 0.95rem;
-          text-transform: uppercase;
+          padding: 14px 16px;
           cursor: pointer;
           box-shadow: 5px 5px 0px #000;
+          text-align: left;
+          animation: popIn 0.4s var(--ease) both;
           will-change: transform, box-shadow;
           transition: transform var(--speed) var(--ease), box-shadow var(--speed) var(--ease);
         }
-        .cat-header-left { display: flex; align-items: center; gap: 10px; }
-        .cat-header:hover { transform: translate(-3px, -3px); box-shadow: 8px 8px 0px #000; }
-        .cat-header:active { transform: translate(1px, 1px); box-shadow: 2px 2px 0px #000; }
-        .cat-meta { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; font-weight: 700; opacity: 0.6; text-transform: none; }
-        .chevron { display: inline-block; font-size: 0.7rem; transition: transform var(--speed) var(--ease); }
-        .cat-header.closed .chevron { transform: rotate(-90deg); }
+        .folder-card:hover { transform: translate(-3px, -3px); box-shadow: 8px 8px 0px #000; }
+        .folder-card:active { transform: translate(1px, 1px); box-shadow: 2px 2px 0px #000; }
+        .folder-card.hidden { display: none; }
+        .folder-info { flex: 1; }
+        .folder-info h3 { font-size: 1rem; font-weight: 800; text-transform: uppercase; margin-bottom: 2px; }
+        .folder-info span { font-size: 0.75rem; font-weight: 700; opacity: 0.55; }
+        .folder-arrow { font-size: 1.2rem; font-weight: 900; transition: transform var(--speed) var(--ease); }
+        .folder-card:hover .folder-arrow { transform: translateX(4px); }
 
-        .cat-body { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.35s var(--ease); }
-        .cat-body.closed { grid-template-rows: 0fr; }
-        .cat-body-inner { overflow: hidden; }
-        .cat-body.open .cat-body-inner { padding-top: 12px; }
+        .back-btn {
+          background: #fff;
+          border: var(--border-width) solid var(--border-color);
+          border-radius: 12px;
+          padding: 8px 14px;
+          font-weight: 800;
+          font-size: 0.8rem;
+          cursor: pointer;
+          box-shadow: 3px 3px 0px #000;
+          margin-bottom: 14px;
+          will-change: transform, box-shadow;
+          transition: transform var(--speed) var(--ease), box-shadow var(--speed) var(--ease);
+        }
+        .back-btn:hover { transform: translate(-3px, -3px); box-shadow: 5px 5px 0px #000; }
+        .back-btn:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0px #000; }
+
+        .view-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+        .view-header h2 { font-size: 1.3rem; font-weight: 900; text-transform: uppercase; }
 
         .icon-box {
           width: 34px; height: 34px;
@@ -218,8 +265,10 @@ app.get('/', (c) => {
           flex-shrink: 0;
           transition: transform var(--speed) var(--ease);
         }
-        .cat-header:hover .icon-box,
+        .folder-card:hover .icon-box,
         .card:hover .icon-box { transform: rotate(-8deg) scale(1.08); }
+
+        .cards-wrap { display: flex; flex-direction: column; }
 
         .card {
           background: #fff;
@@ -368,7 +417,7 @@ app.get('/', (c) => {
           font-size: 0.75rem;
         }
 
-        .empty-state { text-align: center; padding: 30px 10px; font-size: 0.85rem; font-weight: 700; opacity: 0.5; animation: popIn 0.3s var(--ease) both; }
+        .empty-state { text-align: center; padding: 30px 10px; font-size: 0.85rem; font-weight: 700; opacity: 0.5; }
 
         @media (prefers-reduced-motion: reduce) {
           * { animation: none !important; transition: none !important; }
@@ -379,15 +428,18 @@ app.get('/', (c) => {
       <div class="container">
         <div class="hero">
           <h1><span class="rocket">🚀</span> PontaLabs Api</h1>
-          <p>Total endpoint aktif: <b>${endpointsList.length}</b> — dikelompokkan per kategori, klik test buat lihat hasilnya langsung di kartunya.</p>
+          <p>Total endpoint aktif: <b>${endpointsList.length}</b> — pilih kategori buat masuk dan lihat endpoint di dalamnya.</p>
         </div>
 
-        <div class="search-wrap">
-          <input type="text" id="searchBox" placeholder="🔍 Cari endpoint..." oninput="filterCards(this.value)">
+        <div class="view active" id="homeView">
+          <div class="search-wrap">
+            <input type="text" placeholder="🔍 Cari kategori atau endpoint..." oninput="filterHome(this.value)">
+          </div>
+          <div class="folder-grid" id="folderGrid">${folderGridHtml}</div>
+          <div class="empty-state" id="homeEmptyState" style="display:none;">Gak ketemu yang cocok 🕵️</div>
         </div>
 
-        <div id="categoryWrap">${categoriesHtml}</div>
-        <div class="empty-state" id="emptyState" style="display:none;">Gak ketemu endpoint yang cocok 🕵️</div>
+        ${categoryViewsHtml}
       </div>
 
       <script>
@@ -411,24 +463,45 @@ app.get('/', (c) => {
           osc.stop(audioCtx.currentTime + dur);
         }
         function playClickSfx() { beep('sine', 800, 400, 0.04, 0.08); }
-        function playToggleSfx(isOpen) { beep('triangle', isOpen ? 300 : 500, isOpen ? 600 : 250, 0.06, 0.09); }
+        function playNavSfx(isOpen) { beep('triangle', isOpen ? 300 : 500, isOpen ? 600 : 250, 0.06, 0.09); }
 
         document.addEventListener('click', (e) => {
-          if (e.target.closest('.sound-click, .sound-toggle')) playClickSfx();
+          if (e.target.closest('.sound-click')) playClickSfx();
         });
 
-        function toggleCategory(headerEl) {
-          const body = headerEl.nextElementSibling;
-          const willClose = body.classList.contains('open');
-          body.classList.toggle('open', !willClose);
-          body.classList.toggle('closed', willClose);
-          headerEl.classList.toggle('closed', willClose);
-          playToggleSfx(!willClose);
+        function openCategory(catId) {
+          document.getElementById('homeView').classList.remove('active');
+          document.querySelectorAll('.category-view').forEach((v) => v.classList.remove('active'));
+          document.getElementById(catId).classList.add('active');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          playNavSfx(true);
         }
 
-        function filterCards(query) {
+        function showHome() {
+          document.querySelectorAll('.category-view').forEach((v) => v.classList.remove('active'));
+          document.getElementById('homeView').classList.add('active');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          playNavSfx(false);
+        }
+
+        function filterHome(query) {
           const q = query.trim().toLowerCase();
-          const cards = document.querySelectorAll('.card');
+          const folders = document.querySelectorAll('.folder-card');
+          let visibleCount = 0;
+
+          folders.forEach((f) => {
+            const match = !q || f.dataset.catsearch.includes(q);
+            f.classList.toggle('hidden', !match);
+            if (match) visibleCount++;
+          });
+
+          document.getElementById('homeEmptyState').style.display = visibleCount === 0 && q ? 'block' : 'none';
+        }
+
+        function filterCards(query, catId) {
+          const view = document.getElementById(catId);
+          const q = query.trim().toLowerCase();
+          const cards = view.querySelectorAll('.card');
           let visibleCount = 0;
 
           cards.forEach((card) => {
@@ -437,12 +510,7 @@ app.get('/', (c) => {
             if (match) visibleCount++;
           });
 
-          document.querySelectorAll('.category').forEach((section) => {
-            const visible = section.querySelectorAll('.card:not(.hidden)').length;
-            section.style.display = visible === 0 && q ? 'none' : '';
-          });
-
-          document.getElementById('emptyState').style.display = visibleCount === 0 && q ? 'block' : 'none';
+          view.querySelector('.empty-state').style.display = visibleCount === 0 && q ? 'block' : 'none';
         }
 
         async function testApi(path, respId) {
