@@ -48,10 +48,12 @@ export const handle = async (c) => {
 
   try {
     const shotUrl = `https://image.thum.io/get/width/1280/crop/900/${url}`;
-    const shotRes = await fetch(shotUrl);
+    const shotRes = await fetch(shotUrl, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }
+    });
 
     if (!shotRes.ok) {
-      return c.json({ status: false, message: 'Gagal ambil screenshot dari target' }, 502);
+      return c.json({ status: false, message: `Gagal ambil screenshot dari target (HTTP ${shotRes.status})` }, 502);
     }
 
     const buffer = await shotRes.arrayBuffer();
@@ -63,18 +65,27 @@ export const handle = async (c) => {
 
     const uploadRes = await fetch('https://uguu.se/upload', {
       method: 'POST',
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
       body: formData
     });
 
+    const rawText = await uploadRes.text();
+
     if (!uploadRes.ok) {
-      return c.json({ status: false, message: 'Gagal upload ke Uguu' }, 502);
+      return c.json({ status: false, message: `Gagal upload ke Uguu (HTTP ${uploadRes.status})`, detail: rawText.slice(0, 300) }, 502);
     }
 
-    const uploadResult = await uploadRes.json();
+    let uploadResult;
+    try {
+      uploadResult = JSON.parse(rawText);
+    } catch {
+      return c.json({ status: false, message: 'Respons Uguu bukan JSON valid', detail: rawText.slice(0, 300) }, 502);
+    }
+
     const imageUrl = uploadResult?.files?.[0]?.url;
 
     if (!imageUrl) {
-      return c.json({ status: false, message: 'Upload berhasil tapi URL gambar gak ketemu' }, 500);
+      return c.json({ status: false, message: 'Upload berhasil tapi URL gambar gak ketemu', detail: uploadResult }, 500);
     }
 
     return c.json({ status: true, target: url, screenshot: imageUrl });
