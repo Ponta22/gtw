@@ -1,6 +1,7 @@
 export const config = {
   path: '/api/chatgpt',
   name: 'ChatGPT API 🤖',
+  category: 'AI Chat',
   desc: 'Endpoint buat ngobrol sama ChatGPT (support chatId, auth, & websearch)',
   
   // Custom cURL command khusus ChatGPT
@@ -8,15 +9,16 @@ export const config = {
   
   // Custom UI buat Form Testing Interaktif ChatGPT
   testUi: `
-    <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
-      <input type="text" id="chatgpt-input" placeholder="Ketik prompt di sini..." style="flex: 1; padding: 8px; border: 3px solid #000; font-weight: bold;">
-      <button onclick="testChatGpt()">🧪 Test Chat</button>
+    <div class="input-row">
+      <input type="text" id="chatgpt-input" placeholder="Ketik prompt di sini...">
+      <button class="btn" onclick="testChatGpt(this)">🧪 Test</button>
     </div>
     <script>
-      async function testChatGpt() {
-        const input = document.getElementById('chatgpt-input').value || 'Halo';
+      function testChatGpt(btn) {
+        const card = btn.closest('.card');
+        const input = card.querySelector('#chatgpt-input').value || 'Halo';
         const url = '/api/chatgpt?prompt=' + encodeURIComponent(input);
-        testApi(url);
+        testApi(url, '__RESPONSE_ID__');
       }
     </script>
   `
