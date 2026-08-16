@@ -1,5 +1,5 @@
 import { Buffer } from 'node:buffer';
-import { aesCbcDecrypt } from '../aes.js';
+import { aesCbcDecrypt } from './aes.js';
 
 export const AUDIO_QUALITIES = [92, 128, 256, 320];
 export const VIDEO_QUALITIES = [144, 360, 480, 720, 1080];
