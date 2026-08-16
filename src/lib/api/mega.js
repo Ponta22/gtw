@@ -29,14 +29,18 @@ export const config = {
 };
 
 export const handle = async (c) => {
-  const url = c.req.query('url');
+  let rawUrl = c.req.url.split('url=')[1] || c.req.query('url');
 
-  if (!url) {
+  if (!rawUrl) {
     return c.json({ status: 'error', message: 'Parameter "url" wajib diisi ya!' }, 400);
   }
 
   try {
-    const { fileId, fileKey } = parseMegaUrl(url);
+    rawUrl = decodeURIComponent(rawUrl);
+  } catch {}
+
+  try {
+    const { fileId, fileKey } = parseMegaUrl(rawUrl);
     const info = await getMegaInfo(fileId);
     const direct = await getMegaDirect(fileId);
 
@@ -104,7 +108,7 @@ function parseMegaUrl(url) {
   url = String(url).trim();
 
   const match =
-    url.match(/mega\.(?:nz|co\.nz)\/file\/([A-Za-z0-9_-]{8})#([A-Za-z0-9_-]+)/) ||
+    url.match(/mega\.(?:nz|co\.nz)\/file\/([A-Za-z0-9_-]{8})(?:#|%23)([A-Za-z0-9_-]+)/) ||
     url.match(/mega\.(?:nz|co\.nz)\/#!([A-Za-z0-9_-]{8})!([A-Za-z0-9_-]+)/);
 
   if (!match) throw new Error('Link Mega tidak valid!');
