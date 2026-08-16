@@ -20,6 +20,31 @@ apiFiles.forEach((module) => {
 const CAT_COLORS = ['#ffe600', '#ff76a5', '#5ce1e6', '#7cfc00', '#b388ff'];
 const CARD_COLORS = ['#5ce1e6', '#ffe600', '#ff76a5', '#7cfc00', '#b388ff'];
 
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function highlightCurl(raw) {
+  const escaped = escapeHtml(raw);
+  const store = [];
+
+  const stash = (html) => {
+    const idx = store.push(html) - 1;
+    return `\u0000${idx}\u0000`;
+  };
+
+  let working = escaped.replace(/'([^']*)'/g, (_m, p1) => stash(`<span class="cmd-string">'${p1}'</span>`));
+  working = working.replace(/"([^"]*)"/g, (_m, p1) => stash(`<span class="cmd-string">&quot;${p1}&quot;</span>`));
+  working = working.replace(/^curl\b/, '<span class="cmd-name">curl</span>');
+  working = working.replace(/(\s)(-{1,2}[A-Za-z][A-Za-z-]*)/g, (_m, sp, flag) => `${sp}<span class="cmd-flag">${flag}</span>`);
+  working = working.replace(/\u0000(\d+)\u0000/g, (_m, idx) => store[Number(idx)]);
+
+  return working;
+}
+
 app.get('/', (c) => {
   const origin = new URL(c.req.url).origin;
 
@@ -97,7 +122,7 @@ app.get('/', (c) => {
               <details class="curl-box">
                 <summary>cURL Command</summary>
                 <div class="code-box-row">
-                  <div class="code-box" id="${curlId}">${curlCommand}</div>
+                  <div class="code-box" id="${curlId}">${highlightCurl(curlCommand)}</div>
                   <button class="copy-btn sound-click" onclick="copyCurl('${curlId}', this)">📋</button>
                 </div>
               </details>
@@ -130,6 +155,8 @@ app.get('/', (c) => {
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>PontaLabs Api</title>
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800;900&display=swap" rel="stylesheet">
       <style>
         :root {
           --border-color: #000;
@@ -141,7 +168,7 @@ app.get('/', (c) => {
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
         body {
-          font-family: 'Inter', system-ui, -apple-system, sans-serif;
+          font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
           background-color: #f4f0ea;
           background-image: radial-gradient(rgba(0,0,0,0.16) 1.5px, transparent 1.5px);
           background-size: 22px 22px;
@@ -151,7 +178,7 @@ app.get('/', (c) => {
           overflow-x: hidden;
         }
         .container { max-width: 640px; margin: 0 auto; }
-        code, .mono { font-family: 'Courier New', Courier, monospace; }
+        code, .mono, pre { font-family: 'Courier New', Courier, monospace; }
 
         button, input { -webkit-tap-highlight-color: transparent; user-select: none; font-family: inherit; }
         input { user-select: text; }
@@ -164,10 +191,6 @@ app.get('/', (c) => {
           from { opacity: 0; transform: translateX(28px); }
           to { opacity: 1; transform: translateX(0); }
         }
-        @keyframes slideInLeft {
-          from { opacity: 0; transform: translateX(-28px); }
-          to { opacity: 1; transform: translateX(0); }
-        }
         @keyframes wiggle {
           0%, 100% { transform: rotate(-4deg); }
           50% { transform: rotate(4deg); }
@@ -175,6 +198,106 @@ app.get('/', (c) => {
         @keyframes pulse {
           0%, 100% { opacity: 1; transform: scale(1); }
           50% { opacity: 0.4; transform: scale(0.75); }
+        }
+        @keyframes brutalSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes neoBounce {
+          0%, 100% { transform: translateY(0) rotate(-2deg); }
+          50% { transform: translateY(-8px) rotate(2deg); }
+        }
+
+        #loadingScreen {
+          position: fixed;
+          inset: 0;
+          background: #f4f0ea;
+          background-image: radial-gradient(rgba(0,0,0,0.16) 1.5px, transparent 1.5px);
+          background-size: 22px 22px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+          z-index: 999;
+          transition: opacity 0.45s ease, visibility 0.45s ease;
+        }
+        #loadingScreen.fade-out { opacity: 0; visibility: hidden; pointer-events: none; }
+
+        .loading-card {
+          background: #fff;
+          border: 4px solid #000;
+          border-radius: 28px;
+          box-shadow: 8px 8px 0px #000;
+          padding: 30px 24px 24px;
+          max-width: 340px;
+          width: 100%;
+          text-align: center;
+          position: relative;
+        }
+        .loading-badge {
+          position: absolute;
+          top: -18px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: #ffe600;
+          border: 2px solid #000;
+          border-radius: 9999px;
+          box-shadow: 3px 3px 0px #000;
+          padding: 6px 14px;
+          font-weight: 900;
+          font-size: 0.68rem;
+          text-transform: uppercase;
+          white-space: nowrap;
+          animation: neoBounce 1.2s ease-in-out infinite;
+        }
+        .loading-icon {
+          width: 64px;
+          height: 64px;
+          margin: 14px auto 16px;
+          background: #ff5252;
+          border: 4px solid #000;
+          border-radius: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.8rem;
+          animation: brutalSpin 1.6s linear infinite;
+        }
+        .loading-card h1 {
+          font-size: 1.15rem;
+          font-weight: 900;
+          text-transform: uppercase;
+          margin-bottom: 4px;
+        }
+        .loading-status {
+          font-size: 0.78rem;
+          font-weight: 700;
+          opacity: 0.65;
+          margin-bottom: 16px;
+          min-height: 18px;
+        }
+        .loading-bar-outer {
+          background: #f4f0ea;
+          border: 3px solid #000;
+          border-radius: 12px;
+          height: 26px;
+          padding: 3px;
+          overflow: hidden;
+        }
+        .loading-bar-fill {
+          background: linear-gradient(90deg, #ff5252, #ff76a5);
+          border: 2px solid #000;
+          border-radius: 8px;
+          height: 100%;
+          width: 0%;
+          transition: width 0.15s ease-out;
+        }
+        .loading-meta { display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; font-weight: 900; margin-top: 8px; padding: 0 2px; }
+        .loading-pct { background: #000; color: #fff; border-radius: 9999px; padding: 2px 10px; }
+        .loading-tags { display: flex; justify-content: center; gap: 6px; margin-top: 16px; flex-wrap: wrap; }
+        .loading-tags span {
+          border: 2px solid #000;
+          border-radius: 9999px;
+          padding: 3px 10px;
+          font-size: 0.62rem;
+          font-weight: 900;
         }
 
         .hero {
@@ -193,13 +316,32 @@ app.get('/', (c) => {
           letter-spacing: -0.5px;
           margin-bottom: 4px;
         }
-        h1 .rocket { display: inline-block; animation: wiggle 1.8s ease-in-out infinite; transform-origin: 70% 70%; }
+        .hero h1 .rocket { display: inline-block; animation: wiggle 1.8s ease-in-out infinite; transform-origin: 70% 70%; }
         .hero p { font-size: 0.85rem; font-weight: 600; opacity: 0.85; }
 
         .view { display: none; }
         .view.active { display: block; }
         #homeView.active { animation: popIn 0.35s var(--ease) both; }
         .category-view.active { animation: slideInRight 0.35s var(--ease) both; }
+
+        .folder-transition {
+          display: none;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          padding: 40px 10px;
+          font-weight: 800;
+          font-size: 0.85rem;
+          opacity: 0.7;
+        }
+        .folder-transition.show { display: flex; }
+        .mini-spin {
+          width: 20px; height: 20px;
+          border: 3px solid #000;
+          border-top-color: transparent;
+          border-radius: 50%;
+          animation: brutalSpin 0.6s linear infinite;
+        }
 
         .search-wrap { margin-bottom: 16px; }
         .search-wrap input {
@@ -399,8 +541,8 @@ app.get('/', (c) => {
         .status-badge.pending { background: #ffe600; }
 
         .response-panel pre {
-          background: #000;
-          color: #7cfc00;
+          background: #17181c;
+          color: #eee;
           padding: 12px;
           border-radius: 14px;
           border: 2px solid #000;
@@ -408,13 +550,19 @@ app.get('/', (c) => {
           max-height: 240px;
           white-space: pre-wrap;
           word-wrap: break-word;
-          font-family: 'Courier New', Courier, monospace;
           font-size: 0.72rem;
+          line-height: 1.5;
         }
         .loading-dots::after { content: ''; animation: dots 1.2s steps(4, end) infinite; }
         @keyframes dots {
           0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; }
         }
+
+        .tok-key { color: #7ecbff; }
+        .tok-string { color: #7cfc00; }
+        .tok-number { color: #ffb86c; }
+        .tok-bool { color: #ff76a5; }
+        .tok-null { color: #999; font-style: italic; }
 
         details.curl-box summary {
           cursor: pointer;
@@ -430,13 +578,19 @@ app.get('/', (c) => {
         .code-box-row { display: flex; gap: 6px; align-items: stretch; margin-top: 6px; }
         .code-box {
           flex: 1;
-          background: #fdfdfd;
+          background: #17181c;
+          color: #eee;
           border: 2px solid #000;
           border-radius: 10px;
-          padding: 8px 10px;
+          padding: 10px 12px;
           font-size: 0.75rem;
+          line-height: 1.6;
           word-break: break-all;
+          white-space: pre-wrap;
         }
+        .cmd-name { color: #ff9b9b; font-weight: 800; }
+        .cmd-flag { color: #7ecbff; font-weight: 700; }
+        .cmd-string { color: #7cfc00; }
         .copy-btn {
           border: 2px solid #000;
           border-radius: 10px;
@@ -466,6 +620,27 @@ app.get('/', (c) => {
       </style>
     </head>
     <body>
+      <div id="loadingScreen">
+        <div class="loading-card">
+          <div class="loading-badge">🚀 Menyiapkan API kamu</div>
+          <div class="loading-icon">⚡</div>
+          <h1>Memuat Endpoint...</h1>
+          <p class="loading-status" id="loadingStatus">Menghubungkan ke server...</p>
+          <div class="loading-bar-outer">
+            <div class="loading-bar-fill" id="loadingBar"></div>
+          </div>
+          <div class="loading-meta">
+            <span>PROSES</span>
+            <span class="loading-pct" id="loadingPct">0%</span>
+          </div>
+          <div class="loading-tags">
+            <span style="background:#ffe600;">REALTIME</span>
+            <span style="background:#e8f9fd;">SERVERLESS</span>
+            <span style="background:#ffb3d1;">NEO-BRUTALISM</span>
+          </div>
+        </div>
+      </div>
+
       <div class="container">
         <div class="hero">
           <h1><span class="rocket">🚀</span> PontaLabs Api</h1>
@@ -476,6 +651,7 @@ app.get('/', (c) => {
           <div class="search-wrap">
             <input type="text" placeholder="🔍 Cari kategori atau endpoint..." oninput="filterHome(this.value)">
           </div>
+          <div class="folder-transition" id="folderTransition"><span class="mini-spin"></span> Membuka kategori...</div>
           <div class="folder-grid" id="folderGrid">${folderGridHtml}</div>
           <div class="empty-state" id="homeEmptyState" style="display:none;">Gak ketemu yang cocok 🕵️</div>
         </div>
@@ -510,6 +686,41 @@ app.get('/', (c) => {
           if (e.target.closest('.sound-click')) playClickSfx();
         });
 
+        (function runLoadingScreen() {
+          const bar = document.getElementById('loadingBar');
+          const pct = document.getElementById('loadingPct');
+          const status = document.getElementById('loadingStatus');
+          const screen = document.getElementById('loadingScreen');
+
+          const messages = [
+            'Menghubungkan ke server...',
+            'Menyiapkan daftar kategori...',
+            'Merender kartu endpoint...',
+            'Menyalakan neo-brutalism...',
+            'Hampir siap...'
+          ];
+
+          let progress = 0;
+          const timer = setInterval(() => {
+            progress += Math.floor(Math.random() * 7) + 4;
+            if (progress > 100) progress = 100;
+
+            bar.style.width = progress + '%';
+            pct.textContent = progress + '%';
+
+            if (progress < 25) status.textContent = messages[0];
+            else if (progress < 50) status.textContent = messages[1];
+            else if (progress < 75) status.textContent = messages[2];
+            else if (progress < 95) status.textContent = messages[3];
+            else status.textContent = messages[4];
+
+            if (progress >= 100) {
+              clearInterval(timer);
+              setTimeout(() => screen.classList.add('fade-out'), 350);
+            }
+          }, 110);
+        })();
+
         function toggleCard(headEl) {
           const body = headEl.nextElementSibling;
           const willOpen = !body.classList.contains('open');
@@ -519,11 +730,20 @@ app.get('/', (c) => {
         }
 
         function openCategory(catId) {
-          document.getElementById('homeView').classList.remove('active');
-          document.querySelectorAll('.category-view').forEach((v) => v.classList.remove('active'));
-          document.getElementById(catId).classList.add('active');
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-          playNavSfx(true);
+          const grid = document.getElementById('folderGrid');
+          const transition = document.getElementById('folderTransition');
+          grid.style.display = 'none';
+          transition.classList.add('show');
+
+          setTimeout(() => {
+            document.getElementById('homeView').classList.remove('active');
+            document.querySelectorAll('.category-view').forEach((v) => v.classList.remove('active'));
+            document.getElementById(catId).classList.add('active');
+            transition.classList.remove('show');
+            grid.style.display = '';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            playNavSfx(true);
+          }, 380);
         }
 
         function showHome() {
@@ -562,6 +782,26 @@ app.get('/', (c) => {
           view.querySelector('.empty-state').style.display = visibleCount === 0 && q ? 'block' : 'none';
         }
 
+        function escapeHtmlClient(str) {
+          return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function highlightJson(obj) {
+          const json = JSON.stringify(obj, null, 2);
+          const escaped = escapeHtmlClient(json);
+          return escaped.replace(/("(\\\\u[a-zA-Z0-9]{4}|\\\\[^u]|[^\\\\"])*"(\\s*:)?|\\b(true|false|null)\\b|-?\\d+(?:\\.\\d*)?(?:[eE][+\\-]?\\d+)?)/g, (match) => {
+            let cls = 'tok-number';
+            if (/^"/.test(match)) {
+              cls = /:$/.test(match) ? 'tok-key' : 'tok-string';
+            } else if (/true|false/.test(match)) {
+              cls = 'tok-bool';
+            } else if (/null/.test(match)) {
+              cls = 'tok-null';
+            }
+            return '<span class="' + cls + '">' + match + '</span>';
+          });
+        }
+
         async function testApi(path, respId, options) {
           const panel = document.getElementById(respId);
           const body = document.getElementById(respId + '-body');
@@ -579,7 +819,7 @@ app.get('/', (c) => {
             const data = await res.json();
             badge.textContent = res.status;
             badge.className = 'status-badge ' + (res.ok ? 'ok' : 'err');
-            body.textContent = JSON.stringify(data, null, 2);
+            body.innerHTML = highlightJson(data);
           } catch (err) {
             badge.textContent = 'error';
             badge.className = 'status-badge err';
