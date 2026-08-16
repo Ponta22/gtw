@@ -69,30 +69,38 @@ app.get('/', (c) => {
 
       return `
         <div class="card" data-name="${item.name.toLowerCase()}" data-desc="${item.desc.toLowerCase()}">
-          <div class="card-top">
-            <span class="icon-box" style="background:${cardColor};">🔌</span>
-            <h3>${item.name}</h3>
-            <span class="ping-dot"></span>
-          </div>
-          <p class="path"><span>Path</span><code>${item.path}</code></p>
-          <p class="desc">${item.desc}</p>
-          <div class="action-box">${testingUi}</div>
-
-          <div class="response-panel" id="${respId}">
-            <div class="response-head">
-              <span class="response-label">Response</span>
-              <span class="status-badge" id="${respId}-badge"></span>
+          <button class="card-head sound-click" onclick="toggleCard(this)">
+            <div class="card-top">
+              <span class="icon-box" style="background:${cardColor};">🔌</span>
+              <h3>${item.name}</h3>
+              <span class="ping-dot"></span>
             </div>
-            <pre id="${respId}-body"></pre>
-          </div>
+            <p class="path"><span>Path</span><code>${item.path}</code></p>
+            <p class="desc">${item.desc}</p>
+            <span class="card-tap-hint"><i class="chevron">▾</i> Tap buat test & lihat cURL</span>
+          </button>
 
-          <details class="curl-box">
-            <summary>cURL Command</summary>
-            <div class="code-box-row">
-              <div class="code-box" id="${curlId}">${curlCommand}</div>
-              <button class="copy-btn sound-click" onclick="copyCurl('${curlId}', this)">📋</button>
+          <div class="card-body">
+            <div class="card-body-inner">
+              <div class="action-box">${testingUi}</div>
+
+              <div class="response-panel" id="${respId}">
+                <div class="response-head">
+                  <span class="response-label">Response</span>
+                  <span class="status-badge" id="${respId}-badge"></span>
+                </div>
+                <pre id="${respId}-body"></pre>
+              </div>
+
+              <details class="curl-box">
+                <summary>cURL Command</summary>
+                <div class="code-box-row">
+                  <div class="code-box" id="${curlId}">${curlCommand}</div>
+                  <button class="copy-btn sound-click" onclick="copyCurl('${curlId}', this)">📋</button>
+                </div>
+              </details>
             </div>
-          </details>
+          </div>
         </div>
       `;
     }).join('');
@@ -285,6 +293,15 @@ app.get('/', (c) => {
         .card:last-child { margin-bottom: 0; }
         .card.hidden { display: none; }
 
+        .card-head {
+          display: block;
+          width: 100%;
+          background: none;
+          border: none;
+          padding: 0;
+          text-align: left;
+          cursor: pointer;
+        }
         .card-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
         h3 { flex: 1; font-size: 1.05rem; font-weight: 800; }
         .ping-dot {
@@ -296,7 +313,29 @@ app.get('/', (c) => {
 
         .path { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-size: 0.8rem; }
         .path span { opacity: 0.55; font-weight: 700; }
-        .desc { margin-bottom: 14px; font-size: 0.85rem; line-height: 1.5; font-weight: 500; opacity: 0.85; }
+        .desc { margin-bottom: 10px; font-size: 0.85rem; line-height: 1.5; font-weight: 500; opacity: 0.85; }
+
+        .card-tap-hint {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 0.72rem;
+          font-weight: 800;
+          text-transform: uppercase;
+          opacity: 0.5;
+        }
+        .card-tap-hint .chevron { transition: transform var(--speed) var(--ease); }
+        .card-head.open .card-tap-hint .chevron { transform: rotate(180deg); }
+        .card-head.open .card-tap-hint { opacity: 0.75; }
+
+        .card-body {
+          display: grid;
+          grid-template-rows: 0fr;
+          transition: grid-template-rows var(--speed) var(--ease);
+        }
+        .card-body.open { grid-template-rows: 1fr; }
+        .card-body-inner { overflow: hidden; }
+        .card-body.open .card-body-inner { padding-top: 14px; }
 
         .input-row { display: flex; gap: 8px; flex-wrap: wrap; }
         .input-row input[type="text"] {
@@ -468,6 +507,14 @@ app.get('/', (c) => {
         document.addEventListener('click', (e) => {
           if (e.target.closest('.sound-click')) playClickSfx();
         });
+
+        function toggleCard(headEl) {
+          const body = headEl.nextElementSibling;
+          const willOpen = !body.classList.contains('open');
+          body.classList.toggle('open', willOpen);
+          headEl.classList.toggle('open', willOpen);
+          playNavSfx(willOpen);
+        }
 
         function openCategory(catId) {
           document.getElementById('homeView').classList.remove('active');
