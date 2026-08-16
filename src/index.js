@@ -562,7 +562,7 @@ app.get('/', (c) => {
           view.querySelector('.empty-state').style.display = visibleCount === 0 && q ? 'block' : 'none';
         }
 
-        async function testApi(path, respId) {
+        async function testApi(path, respId, options) {
           const panel = document.getElementById(respId);
           const body = document.getElementById(respId + '-body');
           const badge = document.getElementById(respId + '-badge');
@@ -575,7 +575,7 @@ app.get('/', (c) => {
           if (btn) btn.classList.add('loading');
 
           try {
-            const res = await fetch(path);
+            const res = await fetch(path, options || {});
             const data = await res.json();
             badge.textContent = res.status;
             badge.className = 'status-badge ' + (res.ok ? 'ok' : 'err');
