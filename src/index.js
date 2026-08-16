@@ -1,12 +1,13 @@
 import { Hono } from 'hono';
+import * as chatgpt from './lib/api/chatgpt.js';
 
 const app = new Hono();
 
-// Auto-Load semua file di folder src/lib/api/
-const apiFiles = import.meta.glob('./lib/api/*.js', { eager: true });
+// Daftar semua module endpoint (tambahin manual tiap ada file baru di lib/api/)
+const apiFiles = [chatgpt];
 const endpointsList = [];
 
-Object.values(apiFiles).forEach((module) => {
+apiFiles.forEach((module) => {
   if (module.config && module.handle) {
     app.get(module.config.path, module.handle);
     app.post(module.config.path, module.handle);
