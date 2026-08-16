@@ -3,7 +3,7 @@ import { extractVideoId, downloadFromSavetube, AUDIO_QUALITIES } from '../ytdl-c
 export const config = {
   path: '/api/ytmp3',
   name: 'YouTube to MP3 🎵',
-  category: 'YouTube',
+  category: 'Downloader',
   desc: 'Download audio MP3 dari video YouTube (92/128/256/320 kbps)',
 
   curlCmd: (origin) => `curl -X POST "${origin}/api/ytmp3" \\
