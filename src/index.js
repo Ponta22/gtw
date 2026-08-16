@@ -15,7 +15,8 @@ apiFiles.forEach((module) => {
   }
 });
 
-const CARD_COLORS = ['#5ce1e6', '#ffde59', '#ff66c4', '#a6ff96', '#c9a6ff'];
+const CAT_COLORS = ['#ffe600', '#ff76a5', '#5ce1e6', '#7cfc00', '#b388ff'];
+const CARD_COLORS = ['#5ce1e6', '#ffe600', '#ff76a5', '#7cfc00', '#b388ff'];
 
 app.get('/', (c) => {
   const origin = new URL(c.req.url).origin;
@@ -30,9 +31,12 @@ app.get('/', (c) => {
   let globalIndex = 0;
 
   const categoriesHtml = Object.entries(grouped).map(([cat, items], catIndex) => {
+    const catColor = CAT_COLORS[catIndex % CAT_COLORS.length];
+
     const cardsHtml = items.map((item) => {
       const respId = `resp-${globalIndex}`;
       const curlId = `curl-${globalIndex}`;
+      const cardColor = CARD_COLORS[globalIndex % CARD_COLORS.length];
       globalIndex++;
 
       const curlCommand = item.curlCmd
@@ -40,14 +44,14 @@ app.get('/', (c) => {
         : `curl -X GET "${origin}${item.path}"`;
 
       const rawTestingUi = item.testUi
-        || `<div class="input-row"><button class="btn" onclick="testApi('${item.path}', '__RESPONSE_ID__')">🧪 Test GET</button></div>`;
+        || `<div class="input-row"><button class="btn sound-click" onclick="testApi('${item.path}', '__RESPONSE_ID__')">🧪 Test GET</button></div>`;
 
       const testingUi = rawTestingUi.replaceAll('__RESPONSE_ID__', respId);
-      const color = CARD_COLORS[globalIndex % CARD_COLORS.length];
 
       return `
-        <div class="card api-card" data-name="${item.name.toLowerCase()}" data-desc="${item.desc.toLowerCase()}" style="background:${color};">
+        <div class="card" data-name="${item.name.toLowerCase()}" data-desc="${item.desc.toLowerCase()}">
           <div class="card-top">
+            <span class="icon-box" style="background:${cardColor};">🔌</span>
             <h3>${item.name}</h3>
             <span class="ping-dot"></span>
           </div>
@@ -67,7 +71,7 @@ app.get('/', (c) => {
             <summary>cURL Command</summary>
             <div class="code-box-row">
               <div class="code-box" id="${curlId}">${curlCommand}</div>
-              <button class="copy-btn" onclick="copyCurl('${curlId}', this)">📋</button>
+              <button class="copy-btn sound-click" onclick="copyCurl('${curlId}', this)">📋</button>
             </div>
           </details>
         </div>
@@ -76,9 +80,12 @@ app.get('/', (c) => {
 
     return `
       <section class="category" style="animation-delay:${catIndex * 90}ms;">
-        <button class="cat-header" onclick="toggleCategory(this)">
-          <span>${cat}</span>
-          <span class="cat-meta">${items.length} endpoint <i class="chevron">▾</i></span>
+        <button class="cat-header sound-toggle" onclick="toggleCategory(this)">
+          <div class="cat-header-left">
+            <span class="icon-box" style="background:${catColor};">📂</span>
+            <span>${cat}</span>
+          </div>
+          <span class="cat-meta">${items.length} endpoint <i class="chevron">▼</i></span>
         </button>
         <div class="cat-body open">
           <div class="cat-body-inner">${cardsHtml}</div>
@@ -95,174 +102,188 @@ app.get('/', (c) => {
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>PontaLabs Api</title>
       <style>
-        * { box-sizing: border-box; }
+        :root {
+          --border-color: #000;
+          --border-width: 3px;
+          --radius: 18px;
+          --speed: 0.3s;
+          --ease: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
         body {
-          background: #f3f3e0;
-          background-image:
-            radial-gradient(circle at 8% 12%, rgba(92,225,230,0.35), transparent 32%),
-            radial-gradient(circle at 92% 18%, rgba(255,102,196,0.3), transparent 30%),
-            radial-gradient(circle at 50% 95%, rgba(255,222,89,0.3), transparent 35%);
-          background-attachment: fixed;
+          font-family: 'Inter', system-ui, -apple-system, sans-serif;
+          background-color: #f4f0ea;
+          background-image: radial-gradient(rgba(0,0,0,0.16) 1.5px, transparent 1.5px);
+          background-size: 22px 22px;
           color: #000;
-          margin: 0;
           padding: 16px;
-          font-family: 'Courier New', Courier, monospace;
           font-size: 14px;
         }
         .container { max-width: 640px; margin: 0 auto; }
+        code, .mono { font-family: 'Courier New', Courier, monospace; }
+
+        button, input { -webkit-tap-highlight-color: transparent; user-select: none; }
+        input { user-select: text; }
 
         @keyframes popIn {
           from { opacity: 0; transform: translateY(14px) scale(0.97); }
           to { opacity: 1; transform: translateY(0) scale(1); }
         }
         @keyframes wiggle {
-          0%, 100% { transform: rotate(-2deg); }
-          50% { transform: rotate(2deg); }
+          0%, 100% { transform: rotate(-4deg); }
+          50% { transform: rotate(4deg); }
         }
         @keyframes pulse {
           0%, 100% { opacity: 1; transform: scale(1); }
           50% { opacity: 0.4; transform: scale(0.75); }
         }
-        @keyframes dots {
-          0% { content: ''; }
-          25% { content: '.'; }
-          50% { content: '..'; }
-          75% { content: '...'; }
-        }
-        @keyframes slideOpen {
-          from { opacity: 0; max-height: 0; }
-          to { opacity: 1; max-height: 320px; }
-        }
 
         .hero {
-          background: #ffde59;
-          border: 3px solid #000;
-          border-radius: 20px;
+          background: #ffe600;
+          border: var(--border-width) solid var(--border-color);
+          border-radius: var(--radius);
           box-shadow: 6px 6px 0px #000;
-          padding: 18px 20px;
+          padding: 20px 22px;
           margin-bottom: 14px;
-          animation: popIn 0.4s ease both;
-          position: relative;
-          overflow: hidden;
+          animation: popIn 0.4s var(--ease) both;
         }
         h1 {
-          font-size: 1.6rem;
+          font-size: 1.7rem;
+          font-weight: 900;
           text-transform: uppercase;
-          margin: 0 0 4px;
           letter-spacing: -0.5px;
-          display: inline-block;
+          margin-bottom: 4px;
         }
         h1 .rocket { display: inline-block; animation: wiggle 1.8s ease-in-out infinite; transform-origin: 70% 70%; }
-        .hero p { margin: 0; font-size: 0.85rem; }
+        .hero p { font-size: 0.85rem; font-weight: 600; opacity: 0.85; }
 
-        .search-wrap { margin-bottom: 16px; animation: popIn 0.4s ease both; animation-delay: 0.05s; }
+        .search-wrap { margin-bottom: 16px; animation: popIn 0.4s var(--ease) both; animation-delay: 0.05s; }
         .search-wrap input {
           width: 100%;
           border-radius: 14px;
-          border: 3px solid #000;
-          padding: 10px 14px;
-          font-size: 0.85rem;
-          font-weight: bold;
+          border: var(--border-width) solid var(--border-color);
+          padding: 12px 16px;
+          font-size: 0.88rem;
+          font-weight: 800;
           background: #fff;
           box-shadow: 4px 4px 0px #000;
-          transition: box-shadow 0.15s ease, transform 0.15s ease;
+          transition: box-shadow var(--speed) var(--ease), transform var(--speed) var(--ease);
         }
         .search-wrap input:focus {
           outline: none;
-          box-shadow: 5px 5px 0px #000;
-          transform: translateY(-1px);
+          box-shadow: 6px 6px 0px #000;
+          transform: translate(-2px, -2px);
         }
 
-        .category {
-          margin-bottom: 14px;
-          animation: popIn 0.4s ease both;
-        }
+        .category { margin-bottom: 14px; animation: popIn 0.4s var(--ease) both; }
         .cat-header {
           width: 100%;
           display: flex;
           align-items: center;
           justify-content: space-between;
-          background: #000;
-          color: #fff;
-          border: none;
-          border-radius: 16px;
-          padding: 12px 18px;
+          background: #fff;
+          border: var(--border-width) solid var(--border-color);
+          border-radius: var(--radius);
+          padding: 10px 14px;
           font-family: inherit;
-          font-weight: bold;
+          font-weight: 800;
           font-size: 0.95rem;
           text-transform: uppercase;
           cursor: pointer;
-          transition: transform 0.15s ease, border-radius 0.25s ease;
+          box-shadow: 5px 5px 0px #000;
+          will-change: transform, box-shadow;
+          transition: transform var(--speed) var(--ease), box-shadow var(--speed) var(--ease);
         }
-        .cat-header:hover { transform: translateY(-2px); }
-        .cat-header:active { transform: translateY(0px) scale(0.98); }
-        .cat-meta { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: normal; opacity: 0.8; }
-        .chevron { display: inline-block; transition: transform 0.3s ease; }
+        .cat-header-left { display: flex; align-items: center; gap: 10px; }
+        .cat-header:hover { transform: translate(-3px, -3px); box-shadow: 8px 8px 0px #000; }
+        .cat-header:active { transform: translate(1px, 1px); box-shadow: 2px 2px 0px #000; }
+        .cat-meta { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; font-weight: 700; opacity: 0.6; text-transform: none; }
+        .chevron { display: inline-block; font-size: 0.7rem; transition: transform var(--speed) var(--ease); }
         .cat-header.closed .chevron { transform: rotate(-90deg); }
 
-        .cat-body {
-          display: grid;
-          grid-template-rows: 1fr;
-          transition: grid-template-rows 0.35s ease;
-        }
+        .cat-body { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.35s var(--ease); }
         .cat-body.closed { grid-template-rows: 0fr; }
         .cat-body-inner { overflow: hidden; }
         .cat-body.open .cat-body-inner { padding-top: 12px; }
 
-        .card {
-          border: 3px solid #000;
-          border-radius: 18px;
-          box-shadow: 5px 5px 0px #000;
-          padding: 16px;
-          margin-bottom: 12px;
-          animation: popIn 0.4s ease both;
-          transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+        .icon-box {
+          width: 34px; height: 34px;
+          border: var(--border-width) solid var(--border-color);
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1rem;
+          flex-shrink: 0;
+          transition: transform var(--speed) var(--ease);
         }
-        .card:hover { transform: translateY(-3px); box-shadow: 7px 7px 0px #000; }
+        .cat-header:hover .icon-box,
+        .card:hover .icon-box { transform: rotate(-8deg) scale(1.08); }
+
+        .card {
+          background: #fff;
+          border: var(--border-width) solid var(--border-color);
+          border-radius: 20px;
+          box-shadow: 6px 6px 0px #000;
+          padding: 18px;
+          margin-bottom: 14px;
+          animation: popIn 0.4s var(--ease) both;
+          will-change: transform, box-shadow;
+          transition: transform var(--speed) var(--ease), box-shadow var(--speed) var(--ease);
+        }
+        .card:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0px #000; }
         .card:last-child { margin-bottom: 0; }
         .card.hidden { display: none; }
 
-        .card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-        h3 { margin: 0; font-size: 1.05rem; }
+        .card-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        h3 { flex: 1; font-size: 1.05rem; font-weight: 800; }
         .ping-dot {
-          width: 8px; height: 8px; border-radius: 50%;
+          width: 9px; height: 9px; border-radius: 50%;
           background: #1fbf4b; border: 2px solid #000;
           animation: pulse 2s ease-in-out infinite;
           flex-shrink: 0;
         }
 
-        .path { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; font-size: 0.8rem; }
-        .path span { opacity: 0.6; }
-        .desc { margin: 0 0 12px; font-size: 0.82rem; line-height: 1.4; }
+        .path { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-size: 0.8rem; }
+        .path span { opacity: 0.55; font-weight: 700; }
+        .desc { margin-bottom: 14px; font-size: 0.85rem; line-height: 1.5; font-weight: 500; opacity: 0.85; }
 
-        button, input { font-family: inherit; }
         .input-row { display: flex; gap: 8px; flex-wrap: wrap; }
         .input-row input[type="text"] {
           flex: 1;
           min-width: 120px;
-          border-radius: 10px;
-          border: 3px solid #000;
-          padding: 8px 10px;
-          font-size: 0.82rem;
+          border-radius: 12px;
+          border: var(--border-width) solid var(--border-color);
+          padding: 10px 12px;
+          font-size: 0.85rem;
+          font-weight: 700;
+          box-shadow: 3px 3px 0px #000;
+        }
+        .input-row input[type="text"]:focus {
+          outline: none;
+          transform: translate(-2px, -2px);
+          box-shadow: 5px 5px 0px #000;
         }
 
-        .btn, button.btn {
-          background: #ff5757;
+        .btn {
+          background: #ff5252;
           color: #fff;
-          font-weight: bold;
-          font-size: 0.82rem;
-          border: 3px solid #000;
+          font-weight: 800;
+          font-size: 0.85rem;
+          text-transform: uppercase;
+          border: var(--border-width) solid var(--border-color);
           border-radius: 12px;
-          padding: 8px 14px;
+          padding: 10px 16px;
           cursor: pointer;
-          box-shadow: 3px 3px 0px #000;
-          transition: transform 0.12s ease, box-shadow 0.12s ease;
+          box-shadow: 4px 4px 0px #000;
           white-space: nowrap;
+          will-change: transform, box-shadow;
+          transition: transform var(--speed) var(--ease), box-shadow var(--speed) var(--ease), background var(--speed) var(--ease);
         }
-        .btn:hover { transform: translateY(-2px); box-shadow: 4px 4px 0px #000; }
-        .btn:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0px #000; }
-        .btn.loading { opacity: 0.7; cursor: wait; }
+        .btn:hover { transform: translate(-3px, -3px); box-shadow: 7px 7px 0px #000; }
+        .btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0px #000; transition-duration: 0.08s; }
+        .btn.loading { opacity: 0.65; cursor: wait; }
 
         .action-box { margin-bottom: 10px; }
 
@@ -270,57 +291,46 @@ app.get('/', (c) => {
           max-height: 0;
           opacity: 0;
           overflow: hidden;
-          transition: max-height 0.35s ease, opacity 0.3s ease, margin 0.35s ease;
+          transition: max-height var(--speed) var(--ease), opacity var(--speed) var(--ease), margin var(--speed) var(--ease);
         }
-        .response-panel.show {
-          max-height: 320px;
-          opacity: 1;
-          margin-bottom: 12px;
-          animation: slideOpen 0.35s ease;
-        }
-        .response-head {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          margin-bottom: 6px;
-        }
-        .response-label { font-size: 0.75rem; font-weight: bold; opacity: 0.7; text-transform: uppercase; }
+        .response-panel.show { max-height: 320px; opacity: 1; margin-bottom: 12px; }
+        .response-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+        .response-label { font-size: 0.72rem; font-weight: 800; opacity: 0.6; text-transform: uppercase; }
         .status-badge {
           font-size: 0.7rem;
-          font-weight: bold;
-          padding: 2px 8px;
+          font-weight: 800;
+          padding: 3px 10px;
           border-radius: 8px;
           border: 2px solid #000;
           background: #fff;
         }
-        .status-badge.ok { background: #a6ff96; }
+        .status-badge.ok { background: #7cfc00; }
         .status-badge.err { background: #ff9b9b; }
-        .status-badge.pending { background: #fff59e; }
+        .status-badge.pending { background: #ffe600; }
 
         .response-panel pre {
           background: #000;
-          color: #0f0;
-          padding: 10px 12px;
-          border-radius: 12px;
+          color: #7cfc00;
+          padding: 12px;
+          border-radius: 14px;
           border: 2px solid #000;
-          overflow-x: auto;
-          overflow-y: auto;
+          overflow: auto;
           max-height: 240px;
           white-space: pre-wrap;
           word-wrap: break-word;
-          margin: 0;
+          font-family: 'Courier New', Courier, monospace;
           font-size: 0.72rem;
         }
-        .loading-dots::after {
-          content: '';
-          animation: dots 1.2s steps(4, end) infinite;
+        .loading-dots::after { content: ''; animation: dots 1.2s steps(4, end) infinite; }
+        @keyframes dots {
+          0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; }
         }
 
         details.curl-box summary {
           cursor: pointer;
           font-size: 0.78rem;
-          font-weight: bold;
-          opacity: 0.75;
+          font-weight: 800;
+          opacity: 0.7;
           list-style: none;
           user-select: none;
         }
@@ -330,7 +340,7 @@ app.get('/', (c) => {
         .code-box-row { display: flex; gap: 6px; align-items: stretch; margin-top: 6px; }
         .code-box {
           flex: 1;
-          background: #fff;
+          background: #fdfdfd;
           border: 2px solid #000;
           border-radius: 10px;
           padding: 8px 10px;
@@ -342,28 +352,23 @@ app.get('/', (c) => {
           border-radius: 10px;
           background: #fff;
           cursor: pointer;
-          font-size: 0.8rem;
-          padding: 0 10px;
-          transition: transform 0.12s ease, background 0.15s ease;
+          font-size: 0.85rem;
+          padding: 0 12px;
+          box-shadow: 3px 3px 0px #000;
+          transition: transform var(--speed) var(--ease), background var(--speed) var(--ease), box-shadow var(--speed) var(--ease);
         }
-        .copy-btn:hover { transform: translateY(-2px); }
-        .copy-btn.copied { background: #a6ff96; }
+        .copy-btn:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0px #000; }
+        .copy-btn.copied { background: #7cfc00; }
         code {
-          background: #fff;
+          background: #fdfdfd;
           border: 2px solid #000;
           border-radius: 6px;
-          padding: 1px 5px;
-          font-weight: bold;
+          padding: 1px 6px;
+          font-weight: 700;
           font-size: 0.75rem;
         }
 
-        .empty-state {
-          text-align: center;
-          padding: 30px 10px;
-          font-size: 0.85rem;
-          opacity: 0.6;
-          animation: popIn 0.3s ease both;
-        }
+        .empty-state { text-align: center; padding: 30px 10px; font-size: 0.85rem; font-weight: 700; opacity: 0.5; animation: popIn 0.3s var(--ease) both; }
 
         @media (prefers-reduced-motion: reduce) {
           * { animation: none !important; transition: none !important; }
@@ -374,7 +379,7 @@ app.get('/', (c) => {
       <div class="container">
         <div class="hero">
           <h1><span class="rocket">🚀</span> PontaLabs Api</h1>
-          <p>Total endpoint aktif: <b>${endpointsList.length}</b> — dikelompokkan per kategori, tinggal klik test buat lihat hasilnya langsung di kartunya.</p>
+          <p>Total endpoint aktif: <b>${endpointsList.length}</b> — dikelompokkan per kategori, klik test buat lihat hasilnya langsung di kartunya.</p>
         </div>
 
         <div class="search-wrap">
@@ -386,12 +391,39 @@ app.get('/', (c) => {
       </div>
 
       <script>
+        let audioCtx = null;
+        function initAudio() {
+          if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        function beep(type, startFreq, endFreq, dur, vol) {
+          initAudio();
+          if (!audioCtx) return;
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(startFreq, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(endFreq, audioCtx.currentTime + dur);
+          gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + dur);
+        }
+        function playClickSfx() { beep('sine', 800, 400, 0.04, 0.08); }
+        function playToggleSfx(isOpen) { beep('triangle', isOpen ? 300 : 500, isOpen ? 600 : 250, 0.06, 0.09); }
+
+        document.addEventListener('click', (e) => {
+          if (e.target.closest('.sound-click, .sound-toggle')) playClickSfx();
+        });
+
         function toggleCategory(headerEl) {
           const body = headerEl.nextElementSibling;
           const willClose = body.classList.contains('open');
           body.classList.toggle('open', !willClose);
           body.classList.toggle('closed', willClose);
           headerEl.classList.toggle('closed', willClose);
+          playToggleSfx(!willClose);
         }
 
         function filterCards(query) {
