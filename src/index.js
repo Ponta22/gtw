@@ -2,10 +2,12 @@ import { Hono } from 'hono';
 import * as chatgpt from './lib/api/chatgpt.js';
 import * as kraken from './lib/api/kraken.js';
 import * as mega from './lib/api/mega.js';
+import * as ytmp3 from './lib/api/ytmp3.js';
+import * as ytmp4 from './lib/api/ytmp4.js';
 
 const app = new Hono();
 
-const apiFiles = [chatgpt, kraken, mega];
+const apiFiles = [chatgpt, kraken, mega, ytmp3, ytmp4];
 const endpointsList = [];
 
 apiFiles.forEach((module) => {
@@ -121,9 +123,9 @@ app.get('/', (c) => {
 
               <details class="curl-box">
                 <summary>cURL Command</summary>
-                <div class="code-box-row">
+                <div class="code-box-wrap">
                   <div class="code-box" id="${curlId}">${highlightCurl(curlCommand)}</div>
-                  <button class="copy-btn sound-click" onclick="copyCurl('${curlId}', this)">📋</button>
+                  <button class="copy-btn-mini sound-click" onclick="copyCurl('${curlId}', this)">📋</button>
                 </div>
               </details>
             </div>
@@ -497,6 +499,21 @@ app.get('/', (c) => {
           transform: translate(-2px, -2px);
           box-shadow: 5px 5px 0px #000;
         }
+        .input-row select {
+          border-radius: 12px;
+          border: var(--border-width) solid var(--border-color);
+          padding: 10px 12px;
+          font-size: 0.85rem;
+          font-weight: 700;
+          background: #fff;
+          box-shadow: 3px 3px 0px #000;
+          cursor: pointer;
+        }
+        .input-row select:focus {
+          outline: none;
+          transform: translate(-2px, -2px);
+          box-shadow: 5px 5px 0px #000;
+        }
 
         .btn {
           background: #ff5252;
@@ -575,14 +592,13 @@ app.get('/', (c) => {
         details.curl-box summary::-webkit-details-marker { display: none; }
         details.curl-box summary::before { content: '▸ '; }
         details.curl-box[open] summary::before { content: '▾ '; }
-        .code-box-row { display: flex; gap: 6px; align-items: stretch; margin-top: 6px; }
+        .code-box-wrap { position: relative; margin-top: 6px; }
         .code-box {
-          flex: 1;
           background: #17181c;
           color: #eee;
           border: 2px solid #000;
           border-radius: 10px;
-          padding: 10px 12px;
+          padding: 10px 38px 10px 12px;
           font-size: 0.75rem;
           line-height: 1.6;
           word-break: break-all;
@@ -591,18 +607,27 @@ app.get('/', (c) => {
         .cmd-name { color: #ff9b9b; font-weight: 800; }
         .cmd-flag { color: #7ecbff; font-weight: 700; }
         .cmd-string { color: #7cfc00; }
-        .copy-btn {
+        .copy-btn-mini {
+          position: absolute;
+          top: 6px;
+          right: 6px;
+          width: 24px;
+          height: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
           border: 2px solid #000;
-          border-radius: 10px;
-          background: #fff;
+          border-radius: 8px;
+          background: #ffe600;
           cursor: pointer;
-          font-size: 0.85rem;
-          padding: 0 12px;
-          box-shadow: 3px 3px 0px #000;
+          font-size: 0.7rem;
+          padding: 0;
+          box-shadow: 2px 2px 0px #000;
           transition: transform var(--speed) var(--ease), background var(--speed) var(--ease), box-shadow var(--speed) var(--ease);
         }
-        .copy-btn:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0px #000; }
-        .copy-btn.copied { background: #7cfc00; }
+        .copy-btn-mini:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0px #000; }
+        .copy-btn-mini:active { transform: translate(1px, 1px); box-shadow: 0px 0px 0px #000; }
+        .copy-btn-mini.copied { background: #7cfc00; }
         code {
           background: #fdfdfd;
           border: 2px solid #000;
