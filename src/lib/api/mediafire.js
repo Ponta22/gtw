@@ -6,7 +6,9 @@ export const config = {
   category: 'Downloader',
   desc: 'Ambil direct link download file dari MediaFire',
 
-  curlCmd: (origin) => `curl -X GET "${origin}/api/mediafire?url=${encodeURIComponent('https://www.mediafire.com/file/xxxxx/nama.ext/file')}"`,
+  curlCmd: (origin) => `curl -X POST "${origin}/api/mediafire" \\
+  -H "Content-Type: application/json" \\
+  -d '{"url":"https://www.mediafire.com/file/xxxxx/nama.ext/file"}'`,
 
   testUi: `
     <div class="input-row">
@@ -18,20 +20,24 @@ export const config = {
         const card = btn.closest('.card');
         const input = card.querySelector('#mf-input').value;
         if (!input) return;
-        testApi('/api/mediafire?url=' + encodeURIComponent(input), '__RESPONSE_ID__');
+        testApi('/api/mediafire', '__RESPONSE_ID__', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: input })
+        });
       }
     </script>
   `
 };
 
 export const handle = async (c) => {
-  let url = c.req.query('url');
+  let url;
 
-  if (!url) {
-    try {
-      const body = await c.req.json();
-      url = body?.url;
-    } catch {}
+  try {
+    const body = await c.req.json();
+    url = body?.url;
+  } catch {
+    return c.json({ status: false, message: 'Body harus JSON valid, contoh: {"url":"..."}' }, 400);
   }
 
   if (!url) {
