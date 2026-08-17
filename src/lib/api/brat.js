@@ -9,7 +9,7 @@ const CHAR_WIDTH_RATIO = 0.58;
 const LETTER_SPACING = -2;
 const CONTRAST = 1.5;
 
-const FONT_URL = 'https://github.com/Ponta22/font/blob/97a1faee2a53be2e93de1eea341fd306267a6c74/api/Roboto-Regular.ttf';
+const FONT_URL = 'https://raw.githubusercontent.com/Ponta22/font/97a1faee2a53be2e93de1eea341fd306267a6c74/api/Roboto-Regular.ttf';
 
 let wasmReady = false;
 let cachedFont = null;
@@ -25,7 +25,16 @@ async function ensureFont() {
   if (!cachedFont) {
     const res = await fetch(FONT_URL);
     if (!res.ok) throw new Error(`Gagal ambil font (HTTP ${res.status})`);
-    cachedFont = new Uint8Array(await res.arrayBuffer());
+
+    const buf = new Uint8Array(await res.arrayBuffer());
+    const isTtf = buf[0] === 0x00 && buf[1] === 0x01 && buf[2] === 0x00 && buf[3] === 0x00;
+    const isOtf = buf[0] === 0x4F && buf[1] === 0x54 && buf[2] === 0x54 && buf[3] === 0x4F;
+
+    if (!isTtf && !isOtf) {
+      throw new Error('File font gak valid (bukan TTF/OTF asli — cek FONT_URL, mungkin nyasar ke halaman HTML)');
+    }
+
+    cachedFont = buf;
   }
   return cachedFont;
 }
@@ -132,7 +141,7 @@ export const config = {
   path: '/api/brat',
   name: 'Brat Text Generator 🍏',
   category: 'Generator',
-  desc: 'Generate image brat',
+  desc: 'Generate gambar teks ala "brat" (blur + contrast) terus otomatis upload ke Uguu',
 
   curlCmd: (origin) => `curl -X POST "${origin}/api/brat" \\
   -H "Content-Type: application/json" \\
