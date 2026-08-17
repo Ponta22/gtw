@@ -9,7 +9,7 @@ const CHAR_WIDTH_RATIO = 0.58;
 const LETTER_SPACING = -2;
 const CONTRAST = 1.5;
 
-const FONT_URL = 'https://raw.githubusercontent.com/google/fonts/main/apache/roboto/static/Roboto-Regular.ttf';
+const FONT_URL = 'https://github.com/Ponta22/font/blob/97a1faee2a53be2e93de1eea341fd306267a6c74/api/Roboto-Regular.ttf';
 
 let wasmReady = false;
 let cachedFont = null;
