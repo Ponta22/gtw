@@ -6,10 +6,11 @@ import * as ytmp3 from './lib/api/ytmp3.js';
 import * as ytmp4 from './lib/api/ytmp4.js';
 import * as screenshot from './lib/api/screenshot.js';
 import * as mediafire from './lib/api/mediafire.js';
+import * as brat from './lib/api/brat.js';
 
 const app = new Hono();
 
-const apiFiles = [chatgpt, kraken, mega, ytmp3, ytmp4, screenshot, mediafire];
+const apiFiles = [chatgpt, kraken, mega, ytmp3, ytmp4, screenshot, mediafire, brat];
 const endpointsList = [];
 
 apiFiles.forEach((module) => {
