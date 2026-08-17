@@ -59,7 +59,11 @@ app.get('/', (c) => {
     return acc;
   }, {});
 
-  const catEntries = Object.entries(grouped);
+  Object.values(grouped).forEach((items) => {
+    items.sort((a, b) => a.name.localeCompare(b.name));
+  });
+
+  const catEntries = Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b));
   let globalIndex = 0;
   const probeList = [];
 
