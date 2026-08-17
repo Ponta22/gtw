@@ -4,7 +4,7 @@ export const config = {
   path: '/api/ytmp3',
   name: 'YouTube to MP3 🎵',
   category: 'Downloader',
-  desc: 'Download audio MP3 dari video YouTube (92/128/256/320 kbps)',
+  desc: 'Download audio MP3 dari video YouTube',
 
   curlCmd: (origin) => `curl -X POST "${origin}/api/ytmp3" \\
   -H "Content-Type: application/json" \\
