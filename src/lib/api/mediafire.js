@@ -49,8 +49,9 @@ export const handle = async (c) => {
     return c.json({ status: false, message: 'Link harus dari MediaFire!' }, 400);
   }
 
+  const targetUrl = 'https://cors.codeteam.dpdns.org/?url=' + encodeURIComponent(url);
+
   try {
-    const targetUrl = 'https://cors.codeteam.dpdns.org/?url=' + encodeURIComponent(url);
     const res = await axios.get(targetUrl, {
       adapter: 'fetch',
       headers: {
@@ -85,7 +86,17 @@ export const handle = async (c) => {
     return c.json({ status: true, fileName, fileSize, downloadUrl });
   } catch (error) {
     if (error.response) {
-      return c.json({ status: false, message: `Gagal buka halaman MediaFire (HTTP ${error.response.status})` }, 502);
+      const rawData = typeof error.response.data === 'string'
+        ? error.response.data.slice(0, 300)
+        : JSON.stringify(error.response.data).slice(0, 300);
+
+      return c.json({
+        status: false,
+        message: `Gagal buka halaman (HTTP ${error.response.status})`,
+        source_url: targetUrl,
+        response_headers: error.response.headers,
+        response_preview: rawData
+      }, 502);
     }
     return c.json({ status: false, message: error.message || 'Gagal memproses link MediaFire' }, 500);
   }
