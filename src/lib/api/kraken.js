@@ -4,7 +4,7 @@ export const config = {
   path: '/api/kraken',
   name: 'Kraken Downloader 📦',
   category: 'Downloader',
-  desc: 'Ambil link download langsung dari Krakenfiles (title, thumbnail, & direct URL)',
+  desc: 'Ambil link download dari Krakenfiles',
 
   curlCmd: (origin) => `curl -X GET "${origin}/api/kraken?url=https://krakenfiles.com/view/xxxxx/file.html"`,
 
