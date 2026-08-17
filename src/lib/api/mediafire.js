@@ -44,8 +44,14 @@ export const handle = async (c) => {
   }
 
   try {
-    const res = await fetch(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }
+    const targetUrl = 'https://cors.codeteam.dpdns.org/?url=' + encodeURIComponent(url);
+    const res = await fetch(targetUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Referer': 'https://www.mediafire.com/'
+      }
     });
 
     if (!res.ok) {
@@ -71,9 +77,18 @@ export const handle = async (c) => {
       return c.json({ status: false, message: 'Direct link gak ketemu' }, 404);
     }
 
-    const fileName = decodeURIComponent(downloadUrl.split('/').pop().replace(/\+/g, ' '));
+    const fileNameEl = $('.dl-btn-label');
+    let fileName = fileNameEl.attr('title') || null;
 
-    return c.json({ status: true, fileName, downloadUrl });
+    if (!fileName) {
+      fileName = decodeURIComponent(downloadUrl.split('/').pop().replace(/\+/g, ' '));
+    }
+
+    const btnText = downloadBtn.text().trim();
+    const sizeMatch = btnText.match(/\((.*?)\)/);
+    const fileSize = sizeMatch ? sizeMatch[1] : null;
+
+    return c.json({ status: true, fileName, fileSize, downloadUrl });
   } catch (error) {
     return c.json({ status: false, message: error.message || 'Gagal memproses link MediaFire' }, 500);
   }
