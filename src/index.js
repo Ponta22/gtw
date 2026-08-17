@@ -161,7 +161,7 @@ app.get('/', (c) => {
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>PontaLabs Api</title>
       <link rel="preconnect" href="https://fonts.googleapis.com">
-      <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800;900&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800;900&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
       <style>
         :root {
           --border-color: #000;
@@ -310,19 +310,71 @@ app.get('/', (c) => {
           border: var(--border-width) solid var(--border-color);
           border-radius: var(--radius);
           box-shadow: 6px 6px 0px #000;
-          padding: 20px 22px;
-          margin-bottom: 14px;
+          padding: 20px 22px 18px;
+          margin-bottom: 12px;
           animation: popIn 0.4s var(--ease) both;
         }
-        h1 {
-          font-size: 1.7rem;
-          font-weight: 900;
-          text-transform: uppercase;
-          letter-spacing: -0.5px;
-          margin-bottom: 4px;
+        .hero-title { display: flex; align-items: center; gap: 10px; }
+        .hero-title .rocket {
+          font-size: 1.8rem;
+          display: inline-block;
+          animation: wiggle 1.8s ease-in-out infinite;
+          transform-origin: 70% 70%;
         }
-        .hero h1 .rocket { display: inline-block; animation: wiggle 1.8s ease-in-out infinite; transform-origin: 70% 70%; }
-        .hero p { font-size: 0.85rem; font-weight: 600; opacity: 0.85; }
+        .brand-title {
+          font-family: 'Silkscreen', 'Space Grotesk', monospace;
+          font-weight: 700;
+          font-size: 1.35rem;
+          line-height: 1.2;
+          letter-spacing: 0.5px;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0 8px;
+        }
+        .brand-title .w {
+          -webkit-text-stroke: 1.5px #000;
+          paint-order: stroke fill;
+          text-shadow: 2px 2px 0 #000;
+        }
+        .brand-title .w1 { color: #ff5252; }
+        .brand-title .w2 { color: #5ce1e6; }
+        .brand-title .w3 { color: #7cfc00; }
+
+        .deco-line {
+          height: 7px;
+          margin: 12px 0 10px;
+          border-radius: 4px;
+          border: 2px solid #000;
+          background: repeating-linear-gradient(90deg, #ff5252 0 10px, #5ce1e6 10px 20px, #ffe600 20px 30px, #000 30px 32px);
+          background-size: 64px 100%;
+          animation: decoSlide 2s linear infinite;
+        }
+        @keyframes decoSlide { to { background-position: -64px 0; } }
+
+        .hero-tagline { font-size: 0.85rem; font-weight: 600; opacity: 0.85; }
+
+        .stats-row { display: flex; gap: 10px; margin-bottom: 14px; }
+        .stat-chip {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 2px;
+          text-align: center;
+          padding: 14px 8px;
+          border: var(--border-width) solid var(--border-color);
+          border-radius: 16px;
+          box-shadow: 4px 4px 0px #000;
+          animation: popIn 0.4s var(--ease) both;
+          animation-delay: 0.08s;
+          will-change: transform, box-shadow;
+          transition: transform var(--speed) var(--ease), box-shadow var(--speed) var(--ease);
+        }
+        .stat-chip:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px #000; }
+        .stat-icon { font-size: 1.1rem; }
+        .stat-number { font-size: 1.6rem; font-weight: 900; font-family: 'Space Grotesk', sans-serif; }
+        .stat-label { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; opacity: 0.7; }
 
         .view { display: none; }
         .view.active { display: block; }
@@ -671,8 +723,25 @@ app.get('/', (c) => {
 
       <div class="container">
         <div class="hero">
-          <h1><span class="rocket">🚀</span> PontaLabs Api</h1>
-          <p>Total endpoint aktif: <b>${endpointsList.length}</b> — pilih kategori buat masuk dan lihat endpoint di dalamnya.</p>
+          <div class="hero-title">
+            <span class="rocket">🚀</span>
+            <h1 class="brand-title"><span class="w w1">PONTA</span><span class="w w2">LABS</span> <span class="w w3">API</span></h1>
+          </div>
+          <div class="deco-line"></div>
+          <p class="hero-tagline">Pilih kategori buat masuk dan lihat endpoint di dalamnya.</p>
+        </div>
+
+        <div class="stats-row">
+          <div class="stat-chip" style="background:#5ce1e6;">
+            <span class="stat-icon">🔌</span>
+            <span class="stat-number" data-target="${endpointsList.length}">0</span>
+            <span class="stat-label">Endpoint Aktif</span>
+          </div>
+          <div class="stat-chip" style="background:#ff76a5;">
+            <span class="stat-icon">📂</span>
+            <span class="stat-number" data-target="${catEntries.length}">0</span>
+            <span class="stat-label">Kategori</span>
+          </div>
         </div>
 
         <div class="view active" id="homeView">
@@ -683,6 +752,7 @@ app.get('/', (c) => {
           <div class="folder-grid" id="folderGrid">${folderGridHtml}</div>
           <div class="empty-state" id="homeEmptyState" style="display:none;">Gak ketemu yang cocok 🕵️</div>
         </div>
+
 
         ${categoryViewsHtml}
       </div>
@@ -714,6 +784,22 @@ app.get('/', (c) => {
           if (e.target.closest('.sound-click')) playClickSfx();
         });
 
+        function animateStats() {
+          document.querySelectorAll('.stat-number').forEach((el) => {
+            const target = parseInt(el.dataset.target, 10) || 0;
+            const start = performance.now();
+            const duration = 700;
+
+            function tick(now) {
+              const progress = Math.min((now - start) / duration, 1);
+              el.textContent = Math.floor(progress * target);
+              if (progress < 1) requestAnimationFrame(tick);
+              else el.textContent = target;
+            }
+            requestAnimationFrame(tick);
+          });
+        }
+
         (function runLoadingScreen() {
           const bar = document.getElementById('loadingBar');
           const pct = document.getElementById('loadingPct');
@@ -744,7 +830,10 @@ app.get('/', (c) => {
 
             if (progress >= 100) {
               clearInterval(timer);
-              setTimeout(() => screen.classList.add('fade-out'), 350);
+              setTimeout(() => {
+                screen.classList.add('fade-out');
+                animateStats();
+              }, 350);
             }
           }, 110);
         })();
