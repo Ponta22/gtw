@@ -60,6 +60,7 @@ app.get('/', (c) => {
 
   const catEntries = Object.entries(grouped);
   let globalIndex = 0;
+  const probeList = [];
 
   const folderGridHtml = catEntries.map(([cat, items], catIndex) => {
     const catColor = CAT_COLORS[catIndex % CAT_COLORS.length];
@@ -68,7 +69,7 @@ app.get('/', (c) => {
 
     return `
       <button class="folder-card" data-catsearch="${cat.toLowerCase()} ${namesForSearch}" onclick="openCategory('${catId}')">
-        <span class="icon-box" style="background:${catColor};">📂</span>
+        <span class="icon-box" id="folder-icon-${catIndex}" style="background:${catColor};">📂</span>
         <div class="folder-info">
           <h3>${cat}</h3>
           <span>${items.length} endpoint</span>
@@ -85,7 +86,9 @@ app.get('/', (c) => {
     const cardsHtml = items.map((item) => {
       const respId = `resp-${globalIndex}`;
       const curlId = `curl-${globalIndex}`;
+      const pingId = `ping-${globalIndex}`;
       const cardColor = CARD_COLORS[globalIndex % CARD_COLORS.length];
+      probeList.push({ path: item.path, pingId, catIndex });
       globalIndex++;
 
       const curlCommand = item.curlCmd
@@ -103,7 +106,7 @@ app.get('/', (c) => {
             <div class="card-top">
               <span class="icon-box" style="background:${cardColor};">🔌</span>
               <h3>${item.name}</h3>
-              <span class="ping-dot"></span>
+              <span class="ping-dot" id="${pingId}"></span>
             </div>
             <p class="path"><span>Path</span><code>${item.path}</code></p>
             <p class="desc">${item.desc}</p>
@@ -141,7 +144,7 @@ app.get('/', (c) => {
       <div class="view category-view" id="${catId}">
         <button class="back-btn sound-click" onclick="showHome()">← Kembali</button>
         <div class="view-header">
-          <span class="icon-box" style="background:${catColor};">📂</span>
+          <span class="icon-box" id="viewheader-icon-${catIndex}" style="background:${catColor};">📂</span>
           <h2>${cat}</h2>
         </div>
         <div class="search-wrap">
@@ -491,7 +494,10 @@ app.get('/', (c) => {
           background: #1fbf4b; border: 2px solid #000;
           animation: pulse 2s ease-in-out infinite;
           flex-shrink: 0;
+          transition: background var(--speed) var(--ease);
         }
+        .ping-dot.err { background: #ff5252; }
+        .mini-stat.has-error { background: #ffd6d6; }
 
         .path { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-size: 0.8rem; }
         .path span { opacity: 0.55; font-weight: 700; }
@@ -712,6 +718,7 @@ app.get('/', (c) => {
           <div class="top-bar-stats">
             <span class="mini-stat"><span class="mini-icon">🔌</span> <span class="stat-number" data-target="${endpointsList.length}">0</span></span>
             <span class="mini-stat"><span class="mini-icon">📂</span> <span class="stat-number" data-target="${catEntries.length}">0</span></span>
+            <span class="mini-stat" id="errorStat" style="display:none;"><span class="mini-icon">👾</span> <span id="errorCount">0</span></span>
           </div>
         </div>
 
@@ -755,6 +762,8 @@ app.get('/', (c) => {
           if (e.target.closest('.sound-click')) playClickSfx();
         });
 
+        const PROBE_LIST = ${JSON.stringify(probeList)};
+
         function animateStats() {
           document.querySelectorAll('.stat-number').forEach((el) => {
             const target = parseInt(el.dataset.target, 10) || 0;
@@ -769,6 +778,54 @@ app.get('/', (c) => {
             }
             requestAnimationFrame(tick);
           });
+        }
+
+        async function probeEndpoint(path) {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000);
+            const res = await fetch(path, { method: 'GET', signal: controller.signal });
+            clearTimeout(timeoutId);
+
+            const ct = res.headers.get('content-type') || '';
+            if (!ct.includes('application/json')) return false;
+
+            await res.json();
+            return res.status < 500;
+          } catch {
+            return false;
+          }
+        }
+
+        async function runHealthCheck() {
+          const catErrorMap = {};
+          let errorCount = 0;
+
+          await Promise.all(PROBE_LIST.map(async (item) => {
+            const healthy = await probeEndpoint(item.path);
+            const dot = document.getElementById(item.pingId);
+            if (dot) dot.classList.toggle('err', !healthy);
+
+            if (!healthy) {
+              errorCount++;
+              catErrorMap[item.catIndex] = true;
+            }
+          }));
+
+          Object.keys(catErrorMap).forEach((catIndex) => {
+            const folderIcon = document.getElementById('folder-icon-' + catIndex);
+            const viewIcon = document.getElementById('viewheader-icon-' + catIndex);
+            if (folderIcon) folderIcon.style.background = '#ff5252';
+            if (viewIcon) viewIcon.style.background = '#ff5252';
+          });
+
+          const errorStat = document.getElementById('errorStat');
+          const errorCountEl = document.getElementById('errorCount');
+          if (errorCountEl) errorCountEl.textContent = errorCount;
+          if (errorStat) {
+            errorStat.style.display = 'flex';
+            errorStat.classList.toggle('has-error', errorCount > 0);
+          }
         }
 
         (function runLoadingScreen() {
@@ -804,6 +861,7 @@ app.get('/', (c) => {
               setTimeout(() => {
                 screen.classList.add('fade-out');
                 animateStats();
+                runHealthCheck();
               }, 350);
             }
           }, 110);
