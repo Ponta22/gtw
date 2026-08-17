@@ -4,7 +4,7 @@ export const config = {
   path: '/api/ytmp4',
   name: 'YouTube to MP4 🎬',
   category: 'Downloader',
-  desc: 'Download video MP4 dari YouTube (144/360/480/720/1080p)',
+  desc: 'Download video MP4 dari YouTube',
 
   curlCmd: (origin) => `curl -X POST "${origin}/api/ytmp4" \\
   -H "Content-Type: application/json" \\
