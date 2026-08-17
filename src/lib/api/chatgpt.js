@@ -2,7 +2,7 @@ export const config = {
   path: '/api/chatgpt',
   name: 'ChatGPT API 🤖',
   category: 'AI Chat',
-  desc: 'Endpoint buat ngobrol sama ChatGPT (support chatId, auth, & websearch)',
+  desc: 'Endpoint buat ngobrol sama ChatGPT',
   
   // Custom cURL command khusus ChatGPT
   curlCmd: (origin) => `curl -X GET "${origin}/api/chatgpt?prompt=Halo&websearch=true"`,
