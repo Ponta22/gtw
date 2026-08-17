@@ -1,5 +1,4 @@
 import * as cheerio from 'cheerio';
-import { Buffer } from 'node:buffer';
 
 export const config = {
   path: '/api/mediafire',
@@ -44,13 +43,9 @@ export const handle = async (c) => {
   }
 
   try {
-    const targetUrl = 'https://cors.codeteam.dpdns.org/?url=' + encodeURIComponent(url);
-    const res = await fetch(targetUrl, {
+    const res = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Referer': 'https://www.mediafire.com/'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
       }
     });
 
@@ -66,23 +61,14 @@ export const handle = async (c) => {
       return c.json({ status: false, message: 'Tombol download gak ketemu. File mungkin udah dihapus atau link salah.' }, 404);
     }
 
-    let downloadUrl = downloadBtn.attr('href') || downloadBtn.attr('data-href') || null;
-    const scrambled = downloadBtn.attr('data-scrambled-url');
-
-    if (scrambled) {
-      downloadUrl = Buffer.from(scrambled, 'base64').toString('utf-8');
-    }
+    const downloadUrl = downloadBtn.attr('href') || null;
 
     if (!downloadUrl) {
       return c.json({ status: false, message: 'Direct link gak ketemu' }, 404);
     }
 
     const fileNameEl = $('.dl-btn-label');
-    let fileName = fileNameEl.attr('title') || null;
-
-    if (!fileName) {
-      fileName = decodeURIComponent(downloadUrl.split('/').pop().replace(/\+/g, ' '));
-    }
+    const fileName = fileNameEl.attr('title') || null;
 
     const btnText = downloadBtn.text().trim();
     const sizeMatch = btnText.match(/\((.*?)\)/);
