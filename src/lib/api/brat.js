@@ -9,13 +9,25 @@ const CHAR_WIDTH_RATIO = 0.58;
 const LETTER_SPACING = -2;
 const CONTRAST = 1.5;
 
+const FONT_URL = 'https://raw.githubusercontent.com/google/fonts/main/apache/roboto/static/Roboto-Regular.ttf';
+
 let wasmReady = false;
+let cachedFont = null;
 
 async function ensureWasm() {
   if (!wasmReady) {
     await initWasm(wasmModule);
     wasmReady = true;
   }
+}
+
+async function ensureFont() {
+  if (!cachedFont) {
+    const res = await fetch(FONT_URL);
+    if (!res.ok) throw new Error(`Gagal ambil font (HTTP ${res.status})`);
+    cachedFont = new Uint8Array(await res.arrayBuffer());
+  }
+  return cachedFont;
 }
 
 function escapeXml(str) {
@@ -97,7 +109,7 @@ function buildSvg(text) {
         <feGaussianBlur in="SourceGraphic" stdDeviation="1.8"/>
       </filter>
     </defs>
-    <g filter="url(#bratFilter)" font-family="Arial, Helvetica, sans-serif" font-weight="400" letter-spacing="${LETTER_SPACING}" fill="#000000">
+    <g filter="url(#bratFilter)" font-family="Roboto" font-weight="400" letter-spacing="${LETTER_SPACING}" fill="#000000">
       ${textElements}
     </g>
   </svg>`;
@@ -120,7 +132,7 @@ export const config = {
   path: '/api/brat',
   name: 'Brat Text Generator 🍏',
   category: 'Generator',
-  desc: 'Generate Image Brat',
+  desc: 'Generate image brat',
 
   curlCmd: (origin) => `curl -X POST "${origin}/api/brat" \\
   -H "Content-Type: application/json" \\
@@ -161,9 +173,17 @@ export const handle = async (c) => {
 
   try {
     await ensureWasm();
+    const fontBuffer = await ensureFont();
 
     const svg = buildSvg(String(text));
-    const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: CANVAS_SIZE } });
+    const resvg = new Resvg(svg, {
+      fitTo: { mode: 'width', value: CANVAS_SIZE },
+      font: {
+        fontBuffers: [fontBuffer],
+        loadSystemFonts: false,
+        defaultFontFamily: 'Roboto'
+      }
+    });
     const rendered = resvg.render();
 
     const pixels = applyContrast(rendered.pixels);
