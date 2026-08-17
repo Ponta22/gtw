@@ -1,8 +1,22 @@
+import { Resvg, initWasm } from '@resvg/resvg-wasm';
+import wasmModule from '@resvg/resvg-wasm/index_bg.wasm';
+import jpeg from 'jpeg-js';
+
 const CANVAS_SIZE = 500;
 const PADDING = 24;
 const LINE_HEIGHT_RATIO = 1.02;
 const CHAR_WIDTH_RATIO = 0.58;
 const LETTER_SPACING = -2;
+const CONTRAST = 1.5;
+
+let wasmReady = false;
+
+async function ensureWasm() {
+  if (!wasmReady) {
+    await initWasm(wasmModule);
+    wasmReady = true;
+  }
+}
 
 function escapeXml(str) {
   return String(str)
@@ -80,12 +94,7 @@ function buildSvg(text) {
     <rect width="${CANVAS_SIZE}" height="${CANVAS_SIZE}" fill="#ffffff"/>
     <defs>
       <filter id="bratFilter" x="-20%" y="-20%" width="140%" height="140%">
-        <feGaussianBlur in="SourceGraphic" stdDeviation="1.8" result="blurred"/>
-        <feComponentTransfer in="blurred">
-          <feFuncR type="linear" slope="1.5" intercept="-0.25"/>
-          <feFuncG type="linear" slope="1.5" intercept="-0.25"/>
-          <feFuncB type="linear" slope="1.5" intercept="-0.25"/>
-        </feComponentTransfer>
+        <feGaussianBlur in="SourceGraphic" stdDeviation="1.8"/>
       </filter>
     </defs>
     <g filter="url(#bratFilter)" font-family="Arial, Helvetica, sans-serif" font-weight="400" letter-spacing="${LETTER_SPACING}" fill="#000000">
@@ -94,11 +103,24 @@ function buildSvg(text) {
   </svg>`;
 }
 
+function applyContrast(pixels) {
+  for (let i = 0; i < pixels.length; i += 4) {
+    pixels[i] = clamp((pixels[i] - 128) * CONTRAST + 128);
+    pixels[i + 1] = clamp((pixels[i + 1] - 128) * CONTRAST + 128);
+    pixels[i + 2] = clamp((pixels[i + 2] - 128) * CONTRAST + 128);
+  }
+  return pixels;
+}
+
+function clamp(v) {
+  return v < 0 ? 0 : v > 255 ? 255 : v;
+}
+
 export const config = {
   path: '/api/brat',
   name: 'Brat Text Generator 🍏',
   category: 'Generator',
-  desc: 'Generate gambar teks ala "brat" (blur + contrast) terus otomatis upload ke Uguu',
+  desc: 'Generate Image Brat',
 
   curlCmd: (origin) => `curl -X POST "${origin}/api/brat" \\
   -H "Content-Type: application/json" \\
@@ -138,11 +160,19 @@ export const handle = async (c) => {
   }
 
   try {
+    await ensureWasm();
+
     const svg = buildSvg(String(text));
-    const blob = new Blob([svg], { type: 'image/svg+xml' });
+    const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: CANVAS_SIZE } });
+    const rendered = resvg.render();
+
+    const pixels = applyContrast(rendered.pixels);
+    const jpegData = jpeg.encode({ data: pixels, width: rendered.width, height: rendered.height }, 92);
+
+    const blob = new Blob([jpegData.data], { type: 'image/jpeg' });
 
     const formData = new FormData();
-    formData.append('files[]', blob, `brat-${Date.now()}.svg`);
+    formData.append('files[]', blob, `brat-${Date.now()}.jpg`);
 
     const uploadRes = await fetch('https://uguu.se/upload', {
       method: 'POST',
